@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to OCR App!</h1>
+    <p class="lead">Extract text from images and PDF documents using OCR technology.</p>
+    <hr class="my-4">
+    <p>This application allows you to upload images or PDF files and extract text content using Optical Character Recognition.</p>
+    {% if current_user.is_authenticated %}
+    <p>Upload a file to begin:</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('main.ocr') }}" role="button">Start OCR</a>
+    <a class="btn btn-secondary btn-lg" href="{{ url_for('main.results') }}" role="button">View Results</a>
+    {% else %}
+    <p>Please log in to use the OCR features:</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Login</a>
+    <a class="btn btn-secondary btn-lg" href="{{ url_for('auth.register') }}" role="button">Register</a>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Image OCR</h5>
+                <p class="card-text">Extract text from image files (PNG, JPG, JPEG).</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">PDF OCR</h5>
+                <p class="card-text">Extract text from PDF documents.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Save Results</h5>
+                <p class="card-text">All OCR results are saved for future reference.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

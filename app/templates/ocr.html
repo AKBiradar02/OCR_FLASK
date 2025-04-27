@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="h4 mb-0">OCR Processing</h1>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">Upload an image (JPG, PNG) or PDF file to extract text using OCR.</p>
+                <form action="" method="post" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.file.label(class="form-label") }}
+                        {{ form.file(class="form-control", accept=".jpg,.jpeg,.png,.pdf") }}
+                        {% for error in form.file.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Supported formats: JPG, PNG, PDF</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2 class="h5 mb-0">API Usage</h2>
+            </div>
+            <div class="card-body">
+                <p>You can also use our API to process OCR requests programmatically:</p>
+                <pre><code>curl -X POST -F "file=@your_file.jpg" -H "Authorization: Bearer YOUR_TOKEN" {{ request.host_url }}api/ocr</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
