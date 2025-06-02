@@ -10,16 +10,18 @@ This application consists of two parts:
 cur_ocr/
   ├── app/                # Flask application code
   │    ├── controllers/   # Route handlers 
-  │    ├── models/        # Database models
-  │    ├── templates/     # Flask HTML templates (not used by React)
-  │    └── utils/         # Utility functions
+  │    ├── models/        # Database models (User, OCRResult)
+  │    ├── static/        # Static files (uploads, etc.)
+  │    ├── utils/         # Utility functions
+  │    └── __init__.py    # App factory
   ├── frontend/           # React frontend code
-  │    ├── public/        # Static assets
-  │    └── src/           # React components and logic
+  ├── instance/           # Instance folder for Flask (config, etc.)
   ├── uploads/            # Uploaded files (created when needed)
   ├── app.py              # Flask application entry point
   ├── config.py           # Application configuration
-  └── requirements.txt    # Python dependencies
+  ├── requirements.txt    # Python dependencies
+  ├── .env-example        # Example environment variables
+  └── README.md           # Project documentation
 ```
 
 ## How to Run the Application
