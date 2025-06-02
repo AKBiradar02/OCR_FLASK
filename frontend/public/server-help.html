@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Backend Troubleshooting Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #4b5563;
+            margin-top: 30px;
+        }
+        code {
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        pre {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+        .troubleshooting-step {
+            background-color: #f9fafb;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background-color: #fff7ed;
+            border-left: 4px solid #ea580c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Flask Backend Troubleshooting Guide</h1>
+    
+    <p>This guide will help you troubleshoot common issues with the Flask backend server for your OCR application.</p>
+    
+    <h2>1. Checking if the Flask Server is Running</h2>
+    
+    <div class="troubleshooting-step">
+        <p>The most common issue is that the Flask server is not running or is running on a different port than expected.</p>
+        
+        <p>To start the Flask server, open a command prompt or terminal and run:</p>
+        
+        <pre>cd path/to/your/project
+python app.py</pre>
+        
+        <p>You should see output similar to:</p>
+        
+        <pre> * Serving Flask app "app"
+ * Environment: production
+ * Debug mode: True
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)</pre>
+    </div>
+    
+    <h2>2. Check for Error Messages</h2>
+    
+    <div class="troubleshooting-step">
+        <p>Look for error messages in the terminal where Flask is running. Common errors include:</p>
+        
+        <ul>
+            <li>Port already in use (Another application is using port 5000)</li>
+            <li>Missing dependencies</li>
+            <li>Database connection issues</li>
+            <li>Syntax errors in the code</li>
+        </ul>
+    </div>
+    
+    <h2>3. CORS Issues</h2>
+    
+    <div class="troubleshooting-step">
+        <p>If you're seeing CORS errors in the browser console, check that:</p>
+        
+        <ul>
+            <li>The Flask CORS extension is installed: <code>pip install flask-cors</code></li>
+            <li>CORS is properly configured in <code>app/__init__.py</code></li>
+            <li>The frontend origin (http://localhost:3000) is allowed in the CORS settings</li>
+        </ul>
+    </div>
+    
+    <h2>4. Alternative Ports</h2>
+    
+    <div class="troubleshooting-step">
+        <p>If port 5000 is being used by another application, you can run Flask on a different port:</p>
+        
+        <pre>python app.py --port 8000</pre>
+        
+        <p>or modify your app.py file:</p>
+        
+        <pre>if __name__ == '__main__':
+    app.run(debug=True, port=8000)</pre>
+        
+        <p>Then update the API_URL in <code>frontend/src/services/api.jsx</code> to use the new port.</p>
+    </div>
+    
+    <h2>5. Checking API Endpoints</h2>
+    
+    <div class="troubleshooting-step">
+        <p>You can test if the API endpoints are working with a tool like curl or in the browser:</p>
+        
+        <pre>curl http://localhost:5000/api/test</pre>
+        
+        <p>Or simply open <a href="http://localhost:5000/api/test" target="_blank">http://localhost:5000/api/test</a> in your browser.</p>
+    </div>
+    
+    <div class="warning">
+        <h3>⚠️ Common Gotchas</h3>
+        <ul>
+            <li>Windows Defender or other firewalls might be blocking the connection</li>
+            <li>The Flask app might be running but crashes when a request is made</li>
+            <li>Virtual environments: Make sure you're running Flask in the correct virtual environment that has all dependencies installed</li>
+            <li>If using a custom domain for development, it needs to be added to the CORS allowed origins</li>
+        </ul>
+    </div>
+    
+    <h2>6. Testing Connectivity</h2>
+    
+    <div class="troubleshooting-step">
+        <p>You can check if port 5000 is open and accessible with:</p>
+        
+        <pre>python -c "import socket; s = socket.socket(); result = s.connect_ex(('localhost', 5000)); print(f'Port 5000 is {"open" if result == 0 else "closed"}')"</pre>
+    </div>
+    
+    <h2>7. Debugging the Flask Application</h2>
+    
+    <div class="troubleshooting-step">
+        <p>To get more detailed error information, modify app.py to:</p>
+        
+        <pre>if __name__ == '__main__':
+    app.run(debug=True, use_reloader=True)</pre>
+        
+        <p>This will show detailed error messages in the browser when errors occur.</p>
+    </div>
+</body>
+</html> 
