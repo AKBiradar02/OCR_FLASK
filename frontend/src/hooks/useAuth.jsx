@@ -7,13 +7,23 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper to check if user is truly logged in
   const fetchCurrentUser = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const userData = await authAPI.getCurrentUser();
-      setUser(userData);
-      setIsAuthenticated(true);
+
+      // Defensive: check if valid user data exists
+      if (userData && userData.username) {
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
+        // Invalid or expired session
+        setUser(null);
+        setIsAuthenticated(false);
+      }
     } catch (err) {
+      console.error('Session check failed:', err);
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -26,13 +36,15 @@ export function useAuth() {
   }, [fetchCurrentUser]);
 
   const login = async (credentials) => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
       await authAPI.login(credentials);
       await fetchCurrentUser();
     } catch (err) {
-      setError('Invalid username or password');
+      const errorMessage =
+        err.response?.data?.error || 'Invalid username or password';
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -40,25 +52,27 @@ export function useAuth() {
   };
 
   const logout = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       await authAPI.logout();
       setUser(null);
       setIsAuthenticated(false);
     } catch (err) {
-      console.error('Error during logout:', err);
+      console.error('Logout error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const register = async (userData) => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
       await authAPI.register(userData);
+      // Optionally, fetch user again or redirect to login
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Registration failed';
+      const errorMessage =
+        err.response?.data?.error || 'Registration failed';
       setError(errorMessage);
       throw err;
     } finally {
@@ -78,6 +92,6 @@ export function useAuth() {
     login,
     logout,
     register,
-    clearError
+    clearError,
   };
-} 
+}
