@@ -7,7 +7,7 @@ const api = axios.create({
   baseURL: '',                // '' => same-origin
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000
+  timeout: 100000
 });
 
 export const authAPI = {
