@@ -2,36 +2,34 @@
 import axios from 'axios';
 
 /**
- * Resolve the best API base URL in this order:
- * 1) VITE_API_BASE (set in .env or Vercel project vars)
- * 2) Deployed Render backend
- * 3) Local dev fallbacks
- *
- * We actively probe /api/test with a short timeout and pick the first that responds.
+ * Goal:
+ * - In production on Vercel, use SAME-ORIGIN calls via rewrites:
+ *   set VITE_API_BASE to empty string "" and call `/api/...` directly.
+ * - In development (or if you prefer explicit), set VITE_API_BASE to a full URL.
+ *   We'll probe a few candidates and pick the first reachable.
  */
+
+// Defaults
 const RENDER_DEFAULT = 'https://ocr-flask-oyoc.onrender.com';
 const LOCAL_FALLBACKS = ['http://localhost:5000', 'http://127.0.0.1:5000'];
 
-const envBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE)
-  ? String(import.meta.env.VITE_API_BASE).trim()
-  : '';
+// Read env (fix TS rule about mixing && and ?? with parentheses)
+const envBaseRaw = ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) ?? '').trim();
+// If empty => use relative same-origin '' (so requests go to `/api/...`), else use absolute base.
+const ENV_BASE = envBaseRaw === '' ? '' : envBaseRaw;
 
-const dedupe = (arr) => Array.from(new Set(arr.filter(Boolean)));
-const CANDIDATE_URLS = dedupe([envBase, RENDER_DEFAULT, ...LOCAL_FALLBACKS]);
-
-// Small health check for a URL with timeout & proper CORS mode
+// Small health check with timeout
 const ping = async (baseUrl, timeoutMs = 4000) => {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${baseUrl}/api/test`, {
+    const url = baseUrl ? `${baseUrl}/api/test` : `/api/test`; // same-origin when baseUrl is ''
+    const res = await fetch(url, {
       method: 'GET',
-      credentials: 'include', // match axios withCredentials
+      // no credentials needed for health check; avoids cookie/CORS noise
       signal: ctl.signal,
     });
     clearTimeout(t);
-    // We expect JSON; even if unauthorized, server should reply 200 for /api/test
-    // Treat any non-network response as "reachable".
     return res.ok || res.status < 500;
   } catch {
     clearTimeout(t);
@@ -39,19 +37,33 @@ const ping = async (baseUrl, timeoutMs = 4000) => {
   }
 };
 
-// Create axios instance with a temporary base (updated after probe)
+// Decide initial baseURL
+let initialBaseURL = '';
+let candidates = [];
+
+if (ENV_BASE === '') {
+  // Same-origin mode (recommended on Vercel with rewrites)
+  initialBaseURL = ''; // axios will call `/api/...`
+  candidates = [];     // no probing needed
+} else {
+  // Absolute mode: try env first, then Render default, then local fallbacks
+  candidates = Array.from(new Set([ENV_BASE, RENDER_DEFAULT, ...LOCAL_FALLBACKS].filter(Boolean)));
+  initialBaseURL = candidates[0] || RENDER_DEFAULT;
+}
+
+// Create axios instance
 const api = axios.create({
-  baseURL: CANDIDATE_URLS[0] || RENDER_DEFAULT,
+  baseURL: initialBaseURL, // '' means same-origin
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 seconds
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000, // ms
 });
 
-// Resolve best base URL on load
+// If using absolute URLs, probe and pick the first reachable
 (async () => {
-  for (const url of CANDIDATE_URLS) {
+  if (candidates.length === 0) return; // same-origin path, nothing to probe
+
+  for (const url of candidates) {
     const ok = await ping(url);
     if (ok) {
       if (api.defaults.baseURL !== url) {
