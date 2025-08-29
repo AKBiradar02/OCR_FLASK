@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
@@ -15,50 +16,49 @@ import ResultDetailPage from './pages/ResultDetailPage';
 // Components
 import Layout from './components/Layout';
 
+// Resolve API base from env (Vite) with safe fallback to your Render URL
+const API_BASE =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE?.trim()) ||
+  'https://ocr-flask-oyoc.onrender.com';
+
 // Backend status checker
 const BackendStatusChecker = () => {
   const [isConnected, setIsConnected] = useState(null);
-  
+
   useEffect(() => {
+    let cancelled = false;
+
     const checkBackendStatus = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/test', { 
+        const res = await fetch(`${API_BASE}/api/test`, {
           method: 'GET',
-          mode: 'cors',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          credentials: 'include', // match axios config
         });
-        if (response.ok) {
-          setIsConnected(true);
-        } else {
-          setIsConnected(false);
-        }
-      } catch (error) {
-        console.error('Backend connection error:', error);
-        setIsConnected(false);
+        if (!cancelled) setIsConnected(res.ok);
+      } catch (err) {
+        if (!cancelled) setIsConnected(false);
+        console.error('Backend connection error:', err);
       }
     };
-    
+
     checkBackendStatus();
-    
-    // Check every 10 seconds
-    const interval = setInterval(checkBackendStatus, 10000);
-    return () => clearInterval(interval);
+    const interval = setInterval(checkBackendStatus, 10000); // every 10s
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
-  
+
   if (isConnected === false) {
     return (
       <div className="fixed top-0 left-0 right-0 bg-red-500 text-white p-2 text-center z-50">
-        Cannot connect to the backend server. Make sure it's running on port 5000.
-        <a href="/server-help.html" target="_blank" className="ml-2 underline">
-          View Troubleshooting Guide
-        </a>
+        Cannot connect to the backend server at&nbsp;
+        <span className="font-semibold">{API_BASE}</span>.
       </div>
     );
   }
-  
+
   return null;
 };
 
@@ -71,7 +71,7 @@ function App() {
     login,
     logout,
     register,
-    clearError
+    clearError,
   } = useAuth();
 
   // Protected route component
@@ -83,63 +83,63 @@ function App() {
   return (
     <Router>
       <BackendStatusChecker />
-      <Layout 
-        isAuthenticated={isAuthenticated} 
-        username={user?.username} 
+      <Layout
+        isAuthenticated={isAuthenticated}
+        username={user?.username}
         onLogout={logout}
       >
         <Routes>
           <Route path="/" element={<HomePage isAuthenticated={isAuthenticated} />} />
-          
-          <Route 
-            path="/login" 
+
+          <Route
+            path="/login"
             element={
-              <LoginPage 
-                login={login} 
-                error={error} 
-                clearError={clearError} 
+              <LoginPage
+                login={login}
+                error={error}
+                clearError={clearError}
               />
-            } 
+            }
           />
-          
-          <Route 
-            path="/register" 
+
+          <Route
+            path="/register"
             element={
               <RegisterPage
                 register={register}
                 error={error}
                 clearError={clearError}
               />
-            } 
+            }
           />
-          
-          <Route 
-            path="/ocr" 
+
+          <Route
+            path="/ocr"
             element={
               <ProtectedRoute>
                 <OCRPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          <Route 
-            path="/results" 
+
+          <Route
+            path="/results"
             element={
               <ProtectedRoute>
                 <ResultsPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          <Route 
-            path="/results/:id" 
+
+          <Route
+            path="/results/:id"
             element={
               <ProtectedRoute>
                 <ResultDetailPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
