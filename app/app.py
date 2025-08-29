@@ -4,9 +4,11 @@ import sys
 
 app = create_app()
 
+
 @app.shell_context_processor
 def make_shell_context():
     return {'db': db, 'User': User, 'OCRResult': OCRResult}
+
 
 # Create tables when app starts
 with app.app_context():
@@ -20,7 +22,7 @@ if __name__ == '__main__':
             port = int(sys.argv[1])
         except ValueError:
             pass
-    
+
     print(f"\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
     print(f"  FLASK API SERVER STARTING")
     print(f"=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=")
@@ -33,6 +35,6 @@ if __name__ == '__main__':
     print(f"  API server will be available at: http://localhost:{port}")
     print(f"  For troubleshooting: http://localhost:3000/server-help.html")
     print(f"=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n")
-    
+
     # Run the Flask application
-    app.run(debug=True, port=port, host='0.0.0.0', use_reloader=True) 
+    app.run(debug=True, port=port, host='0.0.0.0', use_reloader=True)
