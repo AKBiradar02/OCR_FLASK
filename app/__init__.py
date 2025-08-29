@@ -1,3 +1,4 @@
+# app/__init__.py
 import os
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -17,30 +18,38 @@ login.login_message_category = 'info'
 def create_app(config_class=Config):
     app = Flask(
         __name__,
-        static_folder=None,   # Disable default static folder
-        template_folder=None  # Disable default template folder
+        static_folder=None,    # no built-in static serving
+        template_folder=None   # API-only
     )
 
-    # Load config
+    # Load configuration
     app.config.from_object(config_class)
 
-    # CORS setup
-    app.config['CORS_ORIGINS'] = os.getenv(
-        "CORS_ORIGINS", "http://localhost:3000").split(",")
-    app.config['CORS_SUPPORTS_CREDENTIALS'] = True
-    app.config['CORS_ALLOW_HEADERS'] = ['Content-Type', 'Authorization']
-    app.config['CORS_METHODS'] = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    # ---- Session/Cookie settings for cross-site auth (frontend on different domain)
+    # You can override via Render env vars.
+    app.config.setdefault("SESSION_COOKIE_SAMESITE",
+                          os.getenv("SESSION_COOKIE_SAMESITE", "None"))
+    app.config.setdefault("SESSION_COOKIE_SECURE", os.getenv(
+        "SESSION_COOKIE_SECURE", "True") == "True")
 
-    # Init extensions
+    # ---- CORS (allow your frontend origins & send cookies)
+    origins = [o.strip() for o in os.getenv(
+        "CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+    CORS(
+        app,
+        origins=origins,
+        supports_credentials=True
+    )
+
+    # ---- Extensions
     db.init_app(app)
     migrate.init_app(app, db)
     login.init_app(app)
-    CORS(app, origins=app.config['CORS_ORIGINS'])
 
-    # Ensure upload directory exists
+    # ---- Ensure upload directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    # Register blueprints
+    # ---- Blueprints
     from app.controllers.main import main_bp
     from app.controllers.auth import auth_bp
     from app.controllers.api import api_bp
@@ -49,24 +58,46 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    # Import models so Alembic knows them
-    from app.models import user
+    # ---- Import models so Alembic sees them
+    from app.models import user  # noqa: F401
 
-    # Healthcheck / test API
+    # ---- Health check / diagnostics
     @app.route('/api/test', methods=['GET'])
     def test_api():
         return jsonify({'message': 'API is working!'}), 200
 
-    # Root API entrypoint
-    @app.route('/')
+    @app.route('/', methods=['GET'])
     def index():
         return jsonify({
-            'message': 'Flask API server is running!',
-            'status': 'ok',
-            'ui_url': os.getenv("FRONTEND_URL", "http://localhost:3000")
-        })
+            'name': 'Flask OCR API',
+            'status': 'online',
+            'version': '1.0.0',
+            'frontend_url': os.getenv("FRONTEND_URL", "http://localhost:3000"),
+            'api_docs': {
+                'authentication': [
+                    {'endpoint': '/api/login',   'method': 'POST',
+                        'description': 'Log in a user'},
+                    {'endpoint': '/api/logout',  'method': 'POST',
+                        'description': 'Log out a user'},
+                    {'endpoint': '/api/register', 'method': 'POST',
+                        'description': 'Register a new user'},
+                    {'endpoint': '/api/user',    'method': 'GET',
+                        'description': 'Get current user info'}
+                ],
+                'ocr': [
+                    {'endpoint': '/api/ocr',            'method': 'POST',
+                        'description': 'Process file with OCR'},
+                    {'endpoint': '/api/results',        'method': 'GET',
+                        'description': 'Get all OCR results'},
+                    {'endpoint': '/api/results/:id',    'method': 'GET',
+                        'description': 'Get specific OCR result'},
+                    {'endpoint': '/api/results/:id',    'method': 'DELETE',
+                        'description': 'Delete specific OCR result'}
+                ]
+            }
+        }), 200
 
-    # Unauthorized handler (returns JSON instead of HTML)
+    # ---- Auth: return JSON (not HTML) on unauthorized
     @login.unauthorized_handler
     def unauthorized():
         return jsonify({'error': 'Unauthorized access, please login'}), 401
