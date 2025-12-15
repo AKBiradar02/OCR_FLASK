@@ -34,7 +34,7 @@ def create_app(config_class=Config):
 
     # ---- CORS (allow your frontend origins & send cookies)
     origins = [o.strip() for o in os.getenv(
-        "CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+        "CORS_ORIGINS", "http://localhost:3000,https://ocr-flask.vercel.app").split(",") if o.strip()]
     CORS(
         app,
         origins=origins,
@@ -72,7 +72,7 @@ def create_app(config_class=Config):
             'name': 'Flask OCR API',
             'status': 'online',
             'version': '1.0.0',
-            'frontend_url': os.getenv("FRONTEND_URL", "http://localhost:3000"),
+            'frontend_url': os.getenv("FRONTEND_URL", "https://ocr-flask.vercel.app"),
             'api_docs': {
                 'authentication': [
                     {'endpoint': '/api/login',   'method': 'POST',
