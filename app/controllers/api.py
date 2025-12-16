@@ -4,15 +4,15 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.models.user import OCRResult
 from app import db
-import easyocr
+from app.utils.ocr_utils import process_file
 
 api_bp = Blueprint('api', __name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
 MAX_FILE_SIZE_MB = 5  # prevent huge uploads on Render free tier
 
-# ✅ Load EasyOCR reader once, globally
-reader = easyocr.Reader(['en'], gpu=False)
+# ✅ Load EasyOCR reader via utils
+# reader handled in ocr_utils.py
 
 
 def allowed_file(filename, allowed_exts):
@@ -58,9 +58,8 @@ def ocr_process():
     file.save(file_path)
 
     try:
-        # ✅ OCR with global reader
-        results = reader.readtext(file_path, detail=0)
-        extracted_text = "\n".join(results)
+        # ✅ OCR with shared utility (supports PDF & Image)
+        extracted_text = process_file(file_path)
 
         # Save in DB
         ocr_result = OCRResult(
