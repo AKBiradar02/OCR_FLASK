@@ -10,9 +10,7 @@ def make_shell_context():
     return {'db': db, 'User': User, 'OCRResult': OCRResult}
 
 
-# Create tables when app starts
-with app.app_context():
-    db.create_all()
+# db.create_all() removed - using Flask-Migrate in render_start.sh instead
 
 if __name__ == '__main__':
     # Get port from command line arguments or use default 5000
