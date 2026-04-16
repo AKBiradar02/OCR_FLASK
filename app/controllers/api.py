@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -52,7 +53,9 @@ def ocr_process():
         return jsonify({'error': f'File too large (>{MAX_FILE_SIZE_MB} MB)'}), 400
 
     # Save file
-    filename = secure_filename(file.filename)
+    safe_name = secure_filename(file.filename)
+    file_root, file_ext = os.path.splitext(safe_name)
+    filename = f"{file_root}_{uuid.uuid4().hex[:10]}{file_ext}"
     os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
     file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
@@ -60,6 +63,10 @@ def ocr_process():
     try:
         # ✅ OCR with shared utility (supports PDF & Image)
         extracted_text = process_file(file_path)
+        if not extracted_text.strip():
+            return jsonify({
+                'error': 'No readable text detected. Please upload a clearer image/PDF (higher resolution, less blur).'
+            }), 422
 
         # Save in DB
         ocr_result = OCRResult(
@@ -80,6 +87,8 @@ def ocr_process():
 
     except Exception as e:
         db.session.rollback()
+        if os.path.exists(file_path):
+            os.remove(file_path)
         return jsonify({'error': f'OCR failed: {str(e)}'}), 500
 
 
